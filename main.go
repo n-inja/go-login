@@ -25,7 +25,6 @@ func main () {
 	router.POST("/go-login/api/v1/users", register)
 	router.PUT("/go-login/api/v1/users", change)
 	router.DELETE("/go-login/api/v1/users", ban)
-	router.StaticFS("/login", http.Dir("static"))
 	router.Run(":8080")
 }
 
