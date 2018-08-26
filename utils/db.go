@@ -1,37 +1,38 @@
 package utils
 
 import (
-	"golang.org/x/crypto/bcrypt"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/rs/xid"
+	"golang.org/x/crypto/bcrypt"
+
 	"database/sql"
-	"os"
 	"errors"
+	"os"
 	"time"
 )
 
 type User struct {
-	ID string
+	ID   string
 	Name string
 	Hash string
 }
 
 var db *sql.DB
 
-func Open (userName, password, address, databaseName string) (error) {
+func Open(userName, password, address, databaseName string) error {
 	var err error
-	db, err = sql.Open("mysql", userName + ":" + password + "@" + address + "/" + databaseName)
+	db, err = sql.Open("mysql", userName+":"+password+"@"+address+"/"+databaseName)
 	if err != nil {
 		return err
 	}
 	return initDB()
 }
 
-func Close () {
+func Close() {
 	db.Close()
 }
 
-func initDB () (error) {
+func initDB() error {
 	rows, err := db.Query("show tables like 'users'")
 	if err != nil {
 		return err
@@ -69,12 +70,12 @@ func initDB () (error) {
 	return nil
 }
 
-func (user *User) insert() (error) {
+func (user *User) insert() error {
 	_, err := db.Exec("insert into users values (?, ?, ?)", user.ID, user.Name, user.Hash)
 	return err
 }
 
-func Register (ID, Name, Password string) (error) {
+func Register(ID, Name, Password string) error {
 	hash, err := bcrypt.GenerateFromPassword([]byte(Password), bcrypt.DefaultCost)
 	if err != nil {
 		return err
@@ -89,7 +90,7 @@ func Register (ID, Name, Password string) (error) {
 	return nil
 }
 
-func Comfirm (ID, password string) (bool) {
+func Comfirm(ID, password string) bool {
 	rows, err := db.Query("select hash from users where id = ?", ID)
 	if err != nil || !rows.Next() {
 		return false
@@ -100,7 +101,7 @@ func Comfirm (ID, password string) (bool) {
 	return ret == nil
 }
 
-func ChangePassword (ID, oldPass, newPass string) (error) {
+func ChangePassword(ID, oldPass, newPass string) error {
 	if !Comfirm(ID, oldPass) {
 		return errors.New("incorrect id or password")
 	}
@@ -112,7 +113,7 @@ func ChangePassword (ID, oldPass, newPass string) (error) {
 	return err
 }
 
-func ChangeName (ID, password, name string) (error) {
+func ChangeName(ID, password, name string) error {
 	if !Comfirm(ID, password) {
 		return errors.New("incorrect id or password")
 	}
@@ -120,7 +121,7 @@ func ChangeName (ID, password, name string) (error) {
 	return err
 }
 
-func Delete (ID string) (error) {
+func Delete(ID string) error {
 	if ID == "root" {
 		return errors.New("permission denied")
 	}
@@ -128,7 +129,7 @@ func Delete (ID string) (error) {
 	return err
 }
 
-func StartSession (ID, password string) (string, error) {
+func StartSession(ID, password string) (string, error) {
 	if !Comfirm(ID, password) {
 		return "", errors.New("incorrect id or password")
 	}
@@ -141,7 +142,7 @@ func StartSession (ID, password string) (string, error) {
 	return session.String(), nil
 }
 
-func CheckSession (session string) (string, error) {
+func CheckSession(session string) (string, error) {
 	now := time.Now()
 	rows, err := db.Query("select id from sessions where session = ? and expiration_date > ?", session, now.Format("2016-01-02 15:04:05"))
 	if err != nil {
@@ -156,13 +157,13 @@ func CheckSession (session string) (string, error) {
 	return ID, nil
 }
 
-func DiscardSession (session string) (error) {
+func DiscardSession(session string) error {
 	now := time.Now()
 	_, err := db.Exec("delete from sessions where session = ? and expiration_date > ?", session, now.Format("2016-01-02 15:04:05"))
 	return err
 }
 
-func GetNameByID (ID string) (string, error) {
+func GetNameByID(ID string) (string, error) {
 	rows, err := db.Query("select name from users where id = ?", ID)
 	if err != nil {
 		return "", err

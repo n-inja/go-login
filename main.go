@@ -1,14 +1,15 @@
 package main
 
 import (
-	"./utils"
 	"fmt"
-	"os"
-	"github.com/gin-gonic/gin"
 	"net/http"
+	"os"
+
+	"./utils"
+	"github.com/gin-gonic/gin"
 )
 
-func main () {
+func main() {
 	databaseAddress := "127.0.0.1:3306"
 	if os.Getenv("DATABASE_ADDRESS") != "" {
 		databaseAddress = os.Getenv("DATABASE_ADDRESS")
@@ -29,11 +30,11 @@ func main () {
 }
 
 type LoginPost struct {
-	ID string `json:"id" binding:"required"`
+	ID       string `json:"id" binding:"required"`
 	Password string `json:"password" binding:"required"`
 }
 
-func who (c *gin.Context) {
+func who(c *gin.Context) {
 	session, err := c.Cookie("session")
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -56,12 +57,12 @@ func who (c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{
-		"id": ID,
+		"id":   ID,
 		"name": name,
 	})
 }
 
-func login (c *gin.Context) {
+func login(c *gin.Context) {
 	var loginPost LoginPost
 	err := c.BindJSON(&loginPost)
 	if err != nil {
@@ -83,7 +84,7 @@ func login (c *gin.Context) {
 	}
 }
 
-func logout (c *gin.Context) {
+func logout(c *gin.Context) {
 	session, err := c.Cookie("session")
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -102,12 +103,12 @@ func logout (c *gin.Context) {
 }
 
 type RegisterPost struct {
-	ID string `json:"id" binding:"required"`
-	Name string `json:"name" binding:"required"`
+	ID       string `json:"id" binding:"required"`
+	Name     string `json:"name" binding:"required"`
 	Password string `json:"password" binding:"required"`
 }
 
-func register (c *gin.Context) {
+func register(c *gin.Context) {
 	session, err := c.Cookie("session")
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -146,19 +147,19 @@ func register (c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{})
 }
 
-func ban (c *gin.Context) {
+func ban(c *gin.Context) {
 	c.JSON(http.StatusNotImplemented, gin.H{
 		"message": "you should access db directly",
 	})
 }
 
 type ChangePost struct {
-	NewName string `json:"newName" binding:""`
+	NewName     string `json:"newName" binding:""`
 	NewPassword string `json:"newPassword" binding:""`
-	Password string `json:"password" binding:"required"`
+	Password    string `json:"password" binding:"required"`
 }
 
-func change (c *gin.Context) {
+func change(c *gin.Context) {
 	session, err := c.Cookie("session")
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
