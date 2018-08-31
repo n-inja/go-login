@@ -15,6 +15,7 @@ type User struct {
 	ID   string
 	Name string
 	Hash string
+	Auth string
 }
 
 var db *sql.DB
@@ -38,7 +39,7 @@ func initDB() error {
 		return err
 	}
 	if !rows.Next() {
-		_, err := db.Exec("create table users (id varchar(32) NOT NULL PRIMARY KEY, name varchar(32), hash varchar(256))")
+		_, err := db.Exec("create table users (id varchar(32) NOT NULL PRIMARY KEY, name varchar(32) NOT NULL, hash varchar(256) NOT NULL, auth varchar(20) NOT NULL)")
 		if err != nil {
 			rows.Close()
 			return err
@@ -65,23 +66,26 @@ func initDB() error {
 	}
 	defer rows.Close()
 	if !rows.Next() {
-		Register("root", "root", os.Getenv("DATABASE_ROOT_PASSWORD"))
+		Register("root", "root", os.Getenv("DATABASE_ROOT_PASSWORD"), "admin")
 	}
 	return nil
 }
 
 func (user *User) insert() error {
-	_, err := db.Exec("insert into users values (?, ?, ?)", user.ID, user.Name, user.Hash)
+	_, err := db.Exec("insert into users values (?, ?, ?, ?)", user.ID, user.Name, user.Hash, user.Auth)
 	return err
 }
 
-func Register(ID, Name, Password string) error {
+func Register(ID, Name, Password, auth string) error {
 	hash, err := bcrypt.GenerateFromPassword([]byte(Password), bcrypt.DefaultCost)
 	if err != nil {
 		return err
 	}
+	if auth != "admin" && auth != "default" && auth != "guest" {
+		return errors.New("auth = {admin, default, guest}")
+	}
 
-	user := User{ID, Name, string(hash)}
+	user := User{ID, Name, string(hash), auth}
 
 	err = user.insert()
 	if err != nil {
@@ -175,4 +179,18 @@ func GetNameByID(ID string) (string, error) {
 	}
 	rows.Scan(&name)
 	return name, nil
+}
+
+func CheckAuth(ID string) (bool, error) {
+	rows, err := db.Query("select auth from users where id = ?", ID)
+	if err != nil {
+		return false, err
+	}
+	defer rows.Close()
+	var auth string
+	if !rows.Next() {
+		return false, errors.New("user not found")
+	}
+	rows.Scan(&auth)
+	return auth == "admin", nil
 }

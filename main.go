@@ -10,15 +10,18 @@ import (
 )
 
 func main() {
-	databaseAddress := "127.0.0.1:3306"
+	databaseAddress := ""
 	if os.Getenv("DATABASE_ADDRESS") != "" {
 		databaseAddress = os.Getenv("DATABASE_ADDRESS")
 	}
+
+	// connect database
 	err := utils.Open(os.Getenv("DATABASE_USERNAME"), os.Getenv("DATABASE_PASSWORD"), "tcp("+databaseAddress+")", os.Getenv("DATABASE_NAME"))
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
+
 	router := gin.Default()
 	router.POST("/go-login/api/v1/login", login)
 	router.POST("/go-login/api/v1/logout", logout)
@@ -26,7 +29,8 @@ func main() {
 	router.POST("/go-login/api/v1/users", register)
 	router.PUT("/go-login/api/v1/users", change)
 	router.DELETE("/go-login/api/v1/users", ban)
-	router.Run(":8080")
+
+	router.Run(":" + os.Getenv("GO_LOGIN_PORT"))
 }
 
 type LoginPost struct {
@@ -35,6 +39,7 @@ type LoginPost struct {
 }
 
 func who(c *gin.Context) {
+	// get session
 	session, err := c.Cookie("session")
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -42,6 +47,8 @@ func who(c *gin.Context) {
 		})
 		return
 	}
+
+	// get id by session
 	ID, err := utils.CheckSession(session)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -49,13 +56,17 @@ func who(c *gin.Context) {
 		})
 		return
 	}
+
+	// get name by id
 	name, err := utils.GetNameByID(ID)
 	if err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{
-			"message": "uncorrect id or password",
+			"message": "incorrect id or password",
 		})
 		return
 	}
+
+	// return name, id
 	c.JSON(http.StatusOK, gin.H{
 		"id":   ID,
 		"name": name,
@@ -71,17 +82,19 @@ func login(c *gin.Context) {
 		})
 		return
 	}
+
 	session, err := utils.StartSession(loginPost.ID, loginPost.Password)
 	if err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{
 			"message": "invalid session",
 		})
 		return
-	} else {
-		c.SetCookie("session", session, 2592000, "/", os.Getenv("DOMAIN"), true, true)
-		c.JSON(http.StatusOK, gin.H{})
-		return
 	}
+
+	// set cookie
+	c.SetCookie("session", session, 2592000, "/", os.Getenv("DOMAIN"), true, true)
+	c.JSON(http.StatusOK, gin.H{})
+	return
 }
 
 func logout(c *gin.Context) {
@@ -92,14 +105,16 @@ func logout(c *gin.Context) {
 		})
 		return
 	}
+
 	err = utils.DiscardSession(session)
 	if err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{
 			"message": "invalid session",
 		})
-	} else {
-		c.JSON(http.StatusOK, gin.H{})
+		return
 	}
+
+	c.JSON(http.StatusOK, gin.H{})
 }
 
 type RegisterPost struct {
@@ -116,6 +131,7 @@ func register(c *gin.Context) {
 		})
 		return
 	}
+
 	ID, err := utils.CheckSession(session)
 	if err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{
@@ -123,12 +139,21 @@ func register(c *gin.Context) {
 		})
 		return
 	}
-	if ID != "root" {
+
+	isAdmin, err := utils.CheckAuth(ID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"message": "db error",
+		})
+		return
+	}
+	if !isAdmin {
 		c.JSON(http.StatusMethodNotAllowed, gin.H{
 			"message": "permission denied",
 		})
 		return
 	}
+
 	var registerPost RegisterPost
 	err = c.BindJSON(&registerPost)
 	if err != nil {
@@ -137,13 +162,15 @@ func register(c *gin.Context) {
 		})
 		return
 	}
-	err = utils.Register(registerPost.ID, registerPost.Name, registerPost.Password)
+
+	err = utils.Register(registerPost.ID, registerPost.Name, registerPost.Password, "default")
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"message": "db error",
 		})
 		return
 	}
+
 	c.JSON(http.StatusOK, gin.H{})
 }
 
