@@ -16,11 +16,12 @@ func main() {
 	}
 
 	// connect database
-	err := utils.Open(os.Getenv("DATABASE_USERNAME"), os.Getenv("DATABASE_PASSWORD"), "tcp("+databaseAddress+")", os.Getenv("DATABASE_NAME"))
+	err := utils.Open(os.Getenv("DATABASE_USERNAME"), os.Getenv("DATABASE_PASSWORD"), databaseAddress, os.Getenv("DATABASE_NAME"))
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
+	defer utils.Close()
 
 	router := gin.Default()
 	router.POST("/go-login/api/v1/login", login)
@@ -86,7 +87,7 @@ func login(c *gin.Context) {
 	session, err := utils.StartSession(loginPost.ID, loginPost.Password)
 	if err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{
-			"message": "invalid session",
+			"message": "incorrect password or id",
 		})
 		return
 	}

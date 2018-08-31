@@ -1,6 +1,8 @@
 package utils
 
 import (
+	"regexp"
+
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/rs/xid"
 	"golang.org/x/crypto/bcrypt"
@@ -20,12 +22,17 @@ type User struct {
 
 var db *sql.DB
 
+var regexID *regexp.Regexp
+
 func Open(userName, password, address, databaseName string) error {
 	var err error
 	db, err = sql.Open("mysql", userName+":"+password+"@"+address+"/"+databaseName)
 	if err != nil {
 		return err
 	}
+
+	regexID = regexp.MustCompile(`[a-zA-Z-_]+`)
+
 	return initDB()
 }
 
@@ -85,6 +92,10 @@ func Register(ID, Name, Password, auth string) error {
 		return errors.New("auth = {admin, default, guest}")
 	}
 
+	if !regexID.MatchString(ID) {
+		return errors.New("ID := [a-zA-Z-_]+")
+	}
+
 	user := User{ID, Name, string(hash), auth}
 
 	err = user.insert()
@@ -94,7 +105,7 @@ func Register(ID, Name, Password, auth string) error {
 	return nil
 }
 
-func Comfirm(ID, password string) bool {
+func Confirm(ID, password string) bool {
 	rows, err := db.Query("select hash from users where id = ?", ID)
 	if err != nil || !rows.Next() {
 		return false
@@ -106,7 +117,7 @@ func Comfirm(ID, password string) bool {
 }
 
 func ChangePassword(ID, oldPass, newPass string) error {
-	if !Comfirm(ID, oldPass) {
+	if !Confirm(ID, oldPass) {
 		return errors.New("incorrect id or password")
 	}
 	hash, err := bcrypt.GenerateFromPassword([]byte(newPass), bcrypt.DefaultCost)
@@ -118,7 +129,7 @@ func ChangePassword(ID, oldPass, newPass string) error {
 }
 
 func ChangeName(ID, password, name string) error {
-	if !Comfirm(ID, password) {
+	if !Confirm(ID, password) {
 		return errors.New("incorrect id or password")
 	}
 	_, err := db.Exec("update users set name = ? where id = ?", name, ID)
@@ -134,7 +145,7 @@ func Delete(ID string) error {
 }
 
 func StartSession(ID, password string) (string, error) {
-	if !Comfirm(ID, password) {
+	if !Confirm(ID, password) {
 		return "", errors.New("incorrect id or password")
 	}
 	expiration := time.Now().AddDate(0, 0, 30)
