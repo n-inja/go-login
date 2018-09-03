@@ -31,7 +31,7 @@ func Open(userName, password, address, databaseName string) error {
 		return err
 	}
 
-	regexID = regexp.MustCompile(`[a-zA-Z-_]+`)
+	regexID = regexp.MustCompile(`^[a-zA-Z0-9_-]+$`)
 
 	return initDB()
 }
@@ -93,7 +93,7 @@ func Register(ID, Name, Password, auth string) error {
 	}
 
 	if !regexID.MatchString(ID) {
-		return errors.New("ID := [a-zA-Z-_]+")
+		return errors.New("ID := ^[a-zA-Z0-9-_]+$")
 	}
 
 	user := User{ID, Name, string(hash), auth}
