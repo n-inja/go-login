@@ -159,7 +159,7 @@ func StartSession(ID, password string) (string, error) {
 
 func CheckSession(session string) (string, error) {
 	now := time.Now()
-	rows, err := db.Query("select id from sessions where session = ? and expiration_date > ?", session, now.Format("2016-01-02 15:04:05"))
+	rows, err := db.Query("select id from sessions where session = ? and expiration_date > ?", session, now.Format("2006-01-02 15:04:05"))
 	if err != nil {
 		return "", err
 	}
@@ -174,7 +174,7 @@ func CheckSession(session string) (string, error) {
 
 func DiscardSession(session string) error {
 	now := time.Now()
-	_, err := db.Exec("delete from sessions where session = ? and expiration_date > ?", session, now.Format("2016-01-02 15:04:05"))
+	_, err := db.Exec("delete from sessions where session = ? and expiration_date > ?", session, now.Format("2006-01-02 15:04:05"))
 	return err
 }
 
