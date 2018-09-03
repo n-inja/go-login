@@ -46,7 +46,7 @@ func initDB() error {
 		return err
 	}
 	if !rows.Next() {
-		_, err := db.Exec("create table users (id varchar(32) NOT NULL PRIMARY KEY, name varchar(32) NOT NULL, hash varchar(256) NOT NULL, auth varchar(20) NOT NULL)")
+		_, err := db.Exec("create table users (id varchar(32) NOT NULL PRIMARY KEY, name varchar(32) NOT NULL, hash varchar(256) NOT NULL, auth varchar(20) NOT NULL) engine=innodb")
 		if err != nil {
 			rows.Close()
 			return err
