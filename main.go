@@ -43,6 +43,7 @@ func who(c *gin.Context) {
 	// get session
 	session, err := c.Cookie("session")
 	if err != nil {
+		fmt.Println(err)
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"message": "",
 		})
@@ -52,6 +53,7 @@ func who(c *gin.Context) {
 	// get id by session
 	ID, err := utils.CheckSession(session)
 	if err != nil {
+		fmt.Println(err)
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"message": "DB error",
 		})
@@ -61,6 +63,7 @@ func who(c *gin.Context) {
 	// get name by id
 	name, err := utils.GetNameByID(ID)
 	if err != nil {
+		fmt.Println(err)
 		c.JSON(http.StatusUnauthorized, gin.H{
 			"message": "incorrect id or password",
 		})
