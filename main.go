@@ -44,7 +44,7 @@ func who(c *gin.Context) {
 	session, err := c.Cookie("session")
 	if err != nil {
 		fmt.Println(err)
-		c.JSON(http.StatusInternalServerError, gin.H{
+		c.JSON(http.StatusUnauthorized, gin.H{
 			"message": "",
 		})
 		return
