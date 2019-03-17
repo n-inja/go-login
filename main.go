@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"net/http"
 	"os"
 
@@ -10,19 +11,7 @@ import (
 )
 
 func main() {
-	databaseAddress := ""
-	if os.Getenv("DATABASE_ADDRESS") != "" {
-		databaseAddress = os.Getenv("DATABASE_ADDRESS")
-	}
-
-	// connect database
-	err := utils.Open(os.Getenv("DATABASE_USERNAME"), os.Getenv("DATABASE_PASSWORD"), databaseAddress, os.Getenv("DATABASE_NAME"))
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-	defer utils.Close()
-
+	gin.SetMode(gin.ReleaseMode)
 	router := gin.Default()
 	router.POST("/go-login/api/v1/login", login)
 	router.POST("/go-login/api/v1/logout", logout)
@@ -31,7 +20,7 @@ func main() {
 	router.PUT("/go-login/api/v1/users", change)
 	router.DELETE("/go-login/api/v1/users", ban)
 
-	router.Run(":" + os.Getenv("GO_LOGIN_PORT"))
+	log.Fatal(router.Run(":" + os.Getenv("GO_LOGIN_PORT")))
 }
 
 type LoginPost struct {

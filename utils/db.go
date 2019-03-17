@@ -3,6 +3,8 @@ package utils
 import (
 	"regexp"
 
+	"github.com/labstack/gommon/log"
+
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/rs/xid"
 	"golang.org/x/crypto/bcrypt"
@@ -24,16 +26,24 @@ var db *sql.DB
 
 var regexID *regexp.Regexp
 
-func Open(userName, password, address, databaseName string) error {
+func init() {
+	userName := os.Getenv("DATABASE_USERNAME")
+	password := os.Getenv("DATABASE_PASSWORD")
+	address := os.Getenv("DATABASE_ADDRESS")
+	databaseName := os.Getenv("DATABASE_NAME")
 	var err error
 	db, err = sql.Open("mysql", userName+":"+password+"@"+address+"/"+databaseName)
 	if err != nil {
-		return err
+		log.Fatal(err)
 	}
 	db.SetMaxIdleConns(0)
 	regexID = regexp.MustCompile(`^[a-zA-Z0-9_-]+$`)
 
-	return initDB()
+	err = initDB()
+	if err != nil {
+		log.Fatal(err)
+	}
+	return
 }
 
 func Close() {
