@@ -32,7 +32,7 @@ func init() {
 	address := os.Getenv("DATABASE_ADDRESS")
 	databaseName := os.Getenv("DATABASE_NAME")
 	var err error
-	db, err = sql.Open("mysql", userName+":"+password+"@"+address+"/"+databaseName)
+	db, err = sql.Open("mysql", userName+":"+password+"@tcp("+address+")/"+databaseName)
 	if err != nil {
 		log.Fatal(err)
 	}
